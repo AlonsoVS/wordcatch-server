@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WordCatch Server</title>
+    <style>
+      body { 
+        margin: 0; 
+        height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      }
+    </style>
+  </head>
+  <body id='main'>
+    <h1>WordCatch Server</h1>
+    <button id='create-button'>Create Room</button>
+    <form id='room-join-form' action="">
+      <input id='room-id-input' autocomplete="off"/><button>Done</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io('http://localhost:8080/game-room', { autoConnect: false });
+
+      const CREATE_ACTION_CODE = "create-room";
+      const JOIN_ACTION_CODE = "join-to-room";
+      let connectAction = CREATE_ACTION_CODE;
+
+      const createRoomButton = document.getElementById('create-button');
+      createRoomButton.onclick = () => {
+        console.log("connecting...");
+        socket.connect();
+      }
+
+      const roomIdInput = document.getElementById('room-id-input');
+      const connectToRoomForm = document.getElementById('room-join-form');
+
+      connectToRoomForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const roomId = roomIdInput.value;
+        if (roomId) {
+          connectAction = JOIN_ACTION_CODE;
+          room = roomId;
+          socket.connect();
+        } else {
+          alert('You must give a roomId!');
+        }
+      });
+
+      socket.on('connected', (socketId) => {
+        console.log(`Connected to server. User Id=${socketId}`);
+        let room = '';
+
+        if (connectAction === 'create-room') room = socketId;
+        else if (connectAction === 'join-to-room') room = roomIdInput.value;
+
+        socket.emit(connectAction, room);
+      });
+
+      socket.on('user-joined', (roomUsers) => {
+        console.log(`Users connected to room`, roomUsers);
+      });
+
+      socket.on('disconnected', (socketId) => {
+        if (SocketId === socket.id) alert(`User with Id=${socketId} disconnected.`);
+        else {
+          console.log(`User with Id=${socketId} disconnected.`);
+        }
+      });
+
+    </script>
+  </body>
+</html>
