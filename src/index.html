@@ -16,6 +16,9 @@
     <form id='room-join-form' action="">
       <input id='room-id-input' autocomplete="off"/><button>Done</button>
     </form>
+    <button id='select-word-range-button'>Select Word Range</button>
+    <button id='select-words-button'>Select Words to guess</button>
+    <button id='send-attempt-button'>Send attempt</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -24,6 +27,10 @@
       const CREATE_ACTION_CODE = "create-room";
       const JOIN_ACTION_CODE = "join-to-room";
       let connectAction = CREATE_ACTION_CODE;
+
+      let room = '';
+
+      const wordsSelected = ['test word1', 'test word2', 'test word3'];
 
       const createRoomButton = document.getElementById('create-button');
       createRoomButton.onclick = () => {
@@ -39,29 +46,55 @@
         const roomId = roomIdInput.value;
         if (roomId) {
           connectAction = JOIN_ACTION_CODE;
-          room = roomId;
           socket.connect();
         } else {
           alert('You must give a roomId!');
         }
       });
 
+      const selectWordRangeButton = document.getElementById('select-word-range-button');
+      selectWordRangeButton.onclick = () => {
+        socket.emit('word-range-selected', { words: wordsSelected, room });
+      }
+
+      const selectWordsButton = document.getElementById('select-words-button');
+      selectWordsButton.onclick = () => {
+        socket.emit('words-selected', { words: wordsSelected.slice(-2), room });
+      }
+
+      const sendAttemptButton = document.getElementById('send-attempt-button');
+      sendAttemptButton.onclick = () => {
+        socket.emit('send-attempt', { words: wordsSelected.slice(0,2), room });
+      }
+
       socket.on('connected', (socketId) => {
         console.log(`Connected to server. User Id=${socketId}`);
-        let room = '';
-
-        if (connectAction === 'create-room') room = socketId;
+        if (connectAction === 'create-room') room = 'new-room';
         else if (connectAction === 'join-to-room') room = roomIdInput.value;
 
         socket.emit(connectAction, room);
       });
 
-      socket.on('user-joined', (roomUsers) => {
-        console.log(`Users connected to room`, roomUsers);
+      socket.on('user-joined', (event) => {
+        console.log(`Users connected to room ${event.user}`);
+        console.log(`Users in room: ${event.usersInRoom}`);
+      });
+
+      socket.on('word-range-selected', (words) => {
+        console.log(`Selected word range => ${words}`);
+      });
+
+      socket.on('words-selected', (words) => {
+        console.log(`Words selected => ${words}`);
+      });
+
+      socket.on('attempt-checked', (result) => {
+        console.log(`Attempt result: ${JSON.stringify(result.successful)}. 
+        Words: ${JSON.stringify(result.words)}. Points: ${JSON.stringify(result.points)}`);
       });
 
       socket.on('disconnected', (socketId) => {
-        if (SocketId === socket.id) alert(`User with Id=${socketId} disconnected.`);
+        if (socketId === socket.id) alert(`User with Id=${socketId} disconnected.`);
         else {
           console.log(`User with Id=${socketId} disconnected.`);
         }

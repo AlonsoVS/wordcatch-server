@@ -27,7 +27,24 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
     socket.join(room);
     console.log(`User with Id=${socket.id} has joined to room with Id=${room}`);
     const roomFound = gameRoomNamespace.adapter.rooms.get(room);
-    gameRoomNamespace.to(room).emit('user-joined', Array.from(roomFound || []));
+    gameRoomNamespace.to(room)
+      .emit('user-joined', { user: socket.id, usersInRoom: Array.from(roomFound || []) });
+  });
+
+  socket.on('word-range-selected', (turn) => {
+    console.log(`Turn played - selected word range => ${JSON.stringify(turn)}`);
+    socket.to(turn.room).emit('word-range-selected', turn.words);
+  });
+
+  socket.on('words-selected', (turn) => {
+    console.log(`Turn played - selected words => ${JSON.stringify(turn)}`);
+    socket.to(turn.room).emit('words-selected', turn.words);
+  });
+
+  socket.on('send-attempt', (attempt) => {
+    console.log(`Turn played - attempt sended => ${JSON.stringify(attempt)}`);
+    gameRoomNamespace.to(attempt.room)
+      .emit('attempt-checked', { successful: true, words: attempt.words, points: { user_1: 1, user_2: 2 }});
   });
 
   socket.on('disconnect', () => {
