@@ -2,6 +2,7 @@ import { createServer } from "http";
 import express, { Express, Request, Response } from "express";
 import socket from "./socket";
 import { Socket } from "socket.io";
+import { AttemptResponse, Word, AttemptsCount, JoinToRoomEventResponse } from "./types";
 
 const port = process.env.PORT || 8080;
 const app:Express = express();
@@ -18,38 +19,55 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
 
   gameRoomNamespace.to(socket.id).emit('connected', socket.id);
 
+  let roomId = '';
+
   socket.on('create-room', (room:string) => {
     socket.join(room);
+    roomId = room;
     console.log(`Room with Id=${room} was created`);
   });
 
   socket.on('join-to-room', (room:string) => {
     socket.join(room);
+    roomId = room;
     console.log(`User with Id=${socket.id} has joined to room with Id=${room}`);
     const roomFound = gameRoomNamespace.adapter.rooms.get(room);
+    const joinResponse:JoinToRoomEventResponse = { 
+      user: socket.id, 
+      usersInRoom: Array.from(roomFound || []) 
+    };
     gameRoomNamespace.to(room)
-      .emit('user-joined', { user: socket.id, usersInRoom: Array.from(roomFound || []) });
+      .emit('user-joined', joinResponse);
   });
 
-  socket.on('word-range-selected', (turn) => {
-    console.log(`Turn played - selected word range => ${JSON.stringify(turn)}`);
-    socket.to(turn.room).emit('word-range-selected', turn.words);
+  socket.on('word-range-selected', (words:Array<Word>) => {
+    console.log(`Turn played - selected word range => ${JSON.stringify(words)}`);
+    socket.to(roomId).emit('word-range-selected', words);
   });
 
-  socket.on('words-selected', (turn) => {
-    console.log(`Turn played - selected words => ${JSON.stringify(turn)}`);
-    socket.to(turn.room).emit('words-selected', turn.words);
+  socket.on('words-selected', (words:Array<Word>) => {
+    console.log(`Turn played - selected words => ${JSON.stringify(words)}`);
+    socket.to(roomId).emit('words-selected', words);
   });
 
-  socket.on('send-attempt', (attempt) => {
-    console.log(`Turn played - attempt sended => ${JSON.stringify(attempt)}`);
-    gameRoomNamespace.to(attempt.room)
-      .emit('attempt-checked', { successful: true, words: attempt.words, points: { user_1: 1, user_2: 2 }});
+  socket.on('send-attempt', (words:Array<Word>) => {
+    console.log(`Turn played - attempt sended => ${JSON.stringify(words)}`);
+    console.log(`RoomID = ${roomId}`);
+    const result:AttemptResponse = {  
+      wordsAttempts: words.map((word):AttemptsCount => ({
+        count: 1,
+        successful: true,
+        wordId: word.id
+      })), 
+      points: { player_1: 1, player_2: 2 }
+    };
+    gameRoomNamespace.to(roomId)
+      .emit('attempt-checked', result);
   });
 
   socket.on('disconnect', () => {
     console.log(`User with Id=${socket.id} disconnected.`);
-    socket.broadcast.emit('disconnected', socket.id);
+    gameRoomNamespace.to(roomId).emit('user-disconnected', socket.id);
   });
 });
 

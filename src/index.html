@@ -12,13 +12,16 @@
   </head>
   <body id='main'>
     <h1>WordCatch Server</h1>
-    <button id='create-button'>Create Room</button>
+    <form id='room-create-form' action="">
+      <input id='room-create-id-input' autocomplete="off"/><button>Create</button>
+    </form>
     <form id='room-join-form' action="">
       <input id='room-id-input' autocomplete="off"/><button>Done</button>
     </form>
     <button id='select-word-range-button'>Select Word Range</button>
     <button id='select-words-button'>Select Words to guess</button>
     <button id='send-attempt-button'>Send attempt</button>
+    <button id='disconnect-button'>Disconnect</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -30,13 +33,59 @@
 
       let room = '';
 
-      const wordsSelected = ['test word1', 'test word2', 'test word3'];
+      const word_1 = {
+        word: "test word 1",
+        partOfSpeech: "any word 1",
+        definitions: [
+          {
+            antonyms: [],
+            definition: "definition of word 1",
+            synonyms: []
+          }
+        ],
+        id: "test-word-id-1"
+      };
 
-      const createRoomButton = document.getElementById('create-button');
-      createRoomButton.onclick = () => {
-        console.log("connecting...");
-        socket.connect();
-      }
+      const word_2 = {
+        word: "test word 2",
+        partOfSpeech: "any word 2",
+        definitions: [
+          {
+            antonyms: [],
+            definition: "definition of word 2",
+            synonyms: []
+          }
+        ],
+        id: "test-word-id-2"
+      };
+
+      const word_3 = {
+        word: "test word 3",
+        partOfSpeech: "any word 3",
+        definitions: [
+          {
+            antonyms: [],
+            definition: "definition of word 3",
+            synonyms: []
+          }
+        ],
+        id: "test-word-id-3"
+      };
+
+      const wordsSelected = [word_1, word_2, word_3];
+
+      const createRoomIdInput = document.getElementById('room-create-id-input');
+      const createRoomForm = document.getElementById('room-create-form');
+      createRoomForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const roomId = createRoomIdInput.value;
+        if (roomId) {
+          connectAction = CREATE_ACTION_CODE;
+          room = roomId;
+          console.log("connecting...");
+          socket.connect();
+        };
+      });
 
       const roomIdInput = document.getElementById('room-id-input');
       const connectToRoomForm = document.getElementById('room-join-form');
@@ -46,58 +95,61 @@
         const roomId = roomIdInput.value;
         if (roomId) {
           connectAction = JOIN_ACTION_CODE;
+          room = roomId;
           socket.connect();
         } else {
-          alert('You must give a roomId!');
-        }
+          alert('You must provide a roomId!');
+        };
       });
 
       const selectWordRangeButton = document.getElementById('select-word-range-button');
       selectWordRangeButton.onclick = () => {
         socket.emit('word-range-selected', { words: wordsSelected, room });
-      }
+      };
 
       const selectWordsButton = document.getElementById('select-words-button');
       selectWordsButton.onclick = () => {
-        socket.emit('words-selected', { words: wordsSelected.slice(-2), room });
-      }
+        socket.emit('words-selected', wordsSelected.slice(-2));
+      };
 
       const sendAttemptButton = document.getElementById('send-attempt-button');
       sendAttemptButton.onclick = () => {
-        socket.emit('send-attempt', { words: wordsSelected.slice(0,2), room });
-      }
+        socket.emit('send-attempt', wordsSelected.slice(0,2));
+      };
 
       socket.on('connected', (socketId) => {
         console.log(`Connected to server. User Id=${socketId}`);
-        if (connectAction === 'create-room') room = 'new-room';
-        else if (connectAction === 'join-to-room') room = roomIdInput.value;
-
         socket.emit(connectAction, room);
       });
 
       socket.on('user-joined', (event) => {
-        console.log(`Users connected to room ${event.user}`);
-        console.log(`Users in room: ${event.usersInRoom}`);
+        console.log(`User connected to room ${JSON.stringify(event.user)}`);
+        console.log(`Users in room: ${JSON.stringify(event.usersInRoom)}`);
       });
 
       socket.on('word-range-selected', (words) => {
-        console.log(`Selected word range => ${words}`);
+        console.log(`Selected word range => ${JSON.stringify(words)}`);
       });
 
       socket.on('words-selected', (words) => {
-        console.log(`Words selected => ${words}`);
+        console.log(`Words selected => ${JSON.stringify(words)}`);
       });
 
       socket.on('attempt-checked', (result) => {
-        console.log(`Attempt result: ${JSON.stringify(result.successful)}. 
-        Words: ${JSON.stringify(result.words)}. Points: ${JSON.stringify(result.points)}`);
+        console.log(`Attempt result: ${JSON.stringify(result)}`);
       });
 
-      socket.on('disconnected', (socketId) => {
-        if (socketId === socket.id) alert(`User with Id=${socketId} disconnected.`);
-        else {
-          console.log(`User with Id=${socketId} disconnected.`);
-        }
+      const disconnectButton = document.getElementById('disconnect-button');
+      disconnectButton.onclick = () => {
+        socket.disconnect();
+      }
+
+      socket.on('user-disconnected', (socketId) => {
+        console.log(`Player with Id=${socketId} disconnected.`);
+      });
+
+      socket.on('disconnect', () => {
+        alert('Conection losed');
       });
 
     </script>
