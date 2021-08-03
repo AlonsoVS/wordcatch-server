@@ -123,20 +123,20 @@
       });
 
       socket.on('user-joined', (event) => {
-        console.log(`User connected to room ${JSON.stringify(event.user)}`);
+        console.log(`User ${JSON.stringify(event.user)} is connected to room`);
         console.log(`Users in room: ${JSON.stringify(event.usersInRoom)}`);
       });
 
       socket.on('word-range-selected', (words) => {
-        console.log(`Selected word range => ${JSON.stringify(words)}`);
+        console.log(`Selected word range => `, words);
       });
 
       socket.on('words-selected', (words) => {
-        console.log(`Words selected => ${JSON.stringify(words)}`);
+        console.log(`Words selected for another user => `, words);
       });
 
       socket.on('attempt-checked', (result) => {
-        console.log(`Attempt result: ${JSON.stringify(result)}`);
+        console.log(`Attempt result: `, result);
       });
 
       const disconnectButton = document.getElementById('disconnect-button');
@@ -149,7 +149,7 @@
       });
 
       socket.on('disconnect', () => {
-        alert('Conection losed');
+        alert('Conection lost');
       });
 
     </script>

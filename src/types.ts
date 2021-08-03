@@ -1,17 +1,18 @@
 import { Socket } from "socket.io";
+import { WordPoints } from "./utils/pointsCounter";
 
-export type AttemptsCount = {
+export type AttemptCount = {
   count:number
   successful:boolean
   wordId:string
 }
 
 export type AttemptResponse = { 
+  attemptPoints:number
   points:{ 
-    player_1:number 
-    player_2:number 
+    [player:string]:number 
   }
-  wordsAttempts:Array<AttemptsCount>
+  pointsPerWord:Array<WordPoints>
 }
 
 export interface CustomSocket extends Socket {
@@ -19,7 +20,7 @@ export interface CustomSocket extends Socket {
   roomId:string
 }
 
-export type JoinToRoomEventResponse = { 
+export type JoinToRoomResponse = { 
   user:string, 
   usersInRoom:Array<string>
 }
