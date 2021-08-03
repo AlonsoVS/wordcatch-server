@@ -16,7 +16,7 @@ export type AttemptResponse = {
 }
 
 export interface CustomSocket extends Socket {
-  connectionMode:string
+  playerSessionID:string
   roomId:string
 }
 

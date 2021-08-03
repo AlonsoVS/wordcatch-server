@@ -13,11 +13,18 @@
   <body id='main'>
     <h1>WordCatch Server</h1>
     <form id='room-create-form' action="">
-      <input id='room-create-id-input' autocomplete="off"/><button>Create</button>
+      <input id='room-create-id-input' autocomplete="off" placeholder="Room ID To Create"/>
+      <button>Create</button>
     </form>
     <form id='room-join-form' action="">
-      <input id='room-id-input' autocomplete="off"/><button>Done</button>
+      <input id='room-id-input' autocomplete="off" placeholder="Room ID To Connect"/>
+      <button>Done</button>
     </form>
+    <form id='user-id-form' action="">
+      <input id='user-id-input' autocomplete="off" placeholder="User ID"/>
+      <button>Done</button>
+    </form>
+    <button id='reconnect-button'>Reconnect</button>
     <button id='select-word-range-button'>Select Word Range</button>
     <button id='select-words-button'>Select Words to guess</button>
     <button id='send-attempt-button'>Send attempt</button>
@@ -73,6 +80,7 @@
       };
 
       const wordsSelected = [word_1, word_2, word_3];
+      let userID = undefined;
 
       const createRoomIdInput = document.getElementById('room-create-id-input');
       const createRoomForm = document.getElementById('room-create-form');
@@ -80,11 +88,29 @@
         event.preventDefault();
         const roomId = createRoomIdInput.value;
         if (roomId) {
-          connectAction = CREATE_ACTION_CODE;
-          room = roomId;
-          console.log("connecting...");
-          socket.connect();
+          if (userID) {
+            socket.auth = {
+              playerID: userID
+            }
+            connectAction = CREATE_ACTION_CODE;
+            room = roomId;
+            console.log("connecting...");
+            socket.connect();
+          }
         };
+      });
+
+      const userIdInput = document.getElementById('user-id-input')
+      const userIdForm = document.getElementById('user-id-form');
+      userIdForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const playerID = userIdInput.value;
+        if (playerID) {
+          userID = playerID;
+          console.log(`User ID = ${userID}`);
+        } else {
+          alert('You must provide an userID and press Done');
+        }
       });
 
       const roomIdInput = document.getElementById('room-id-input');
@@ -96,11 +122,38 @@
         if (roomId) {
           connectAction = JOIN_ACTION_CODE;
           room = roomId;
-          socket.connect();
+          if (userID) {
+            socket.auth = {
+              playerID: userID
+            };
+            socket.connect();
+          } else {
+            alert('You must provide an userID and press Done');
+          }
         } else {
           alert('You must provide a roomId!');
         };
       });
+
+      const reconnectButton = document.getElementById('reconnect-button');
+      reconnectButton.onclick = () => {
+        const roomId = roomIdInput.value;
+        if (roomId) {
+          connectAction = JOIN_ACTION_CODE;
+          room = roomId;
+          if (userID) {
+            socket.auth = {
+              playerID: userID,
+              roomID: roomId
+            };
+            socket.connect();
+          } else {
+            alert('You must provide an userID and press Done');
+          }
+        } else {
+          alert('You must provide a roomId!');
+        };
+      }
 
       const selectWordRangeButton = document.getElementById('select-word-range-button');
       selectWordRangeButton.onclick = () => {
@@ -117,9 +170,13 @@
         socket.emit('send-attempt', wordsSelected.slice(0,2));
       };
 
-      socket.on('connected', (socketId) => {
-        console.log(`Connected to server. User Id=${socketId}`);
+      socket.on('connected', (playerID) => {
+        console.log(`Connected to server. User ID = `, playerID);
         socket.emit(connectAction, room);
+      });
+
+      socket.on("connect_error", (error) => {
+        console.log(error.message);
       });
 
       socket.on('user-joined', (event) => {
@@ -148,7 +205,7 @@
         console.log(`Player with Id=${socketId} disconnected.`);
       });
 
-      socket.on('disconnect', () => {
+      socket.on('disconnect', (reason) => {
         alert('Conection lost');
       });
 
