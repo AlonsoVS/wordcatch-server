@@ -104,7 +104,7 @@
 
       const selectWordRangeButton = document.getElementById('select-word-range-button');
       selectWordRangeButton.onclick = () => {
-        socket.emit('word-range-selected', { words: wordsSelected, room });
+        socket.emit('word-range-selected', wordsSelected);
       };
 
       const selectWordsButton = document.getElementById('select-words-button');

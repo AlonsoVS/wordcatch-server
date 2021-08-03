@@ -55,18 +55,26 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
   });
 
   socket.on('words-selected', (words:Array<Word>) => {
+    const playersInRoom = Array.from(gameRoomNamespace.adapter.rooms.get(roomId) || []);
+    const otherPlayer = playersInRoom.find(id => id !== socket.id) || '';
+    console.log('Self => ', socket.id)
+    console.log('Other player => ', otherPlayer);
+    console.log('Roomstore => ', roomStore);
     roomStore?.saveSelectedWords(socket.id, words);
-    socket.to(roomId)
+    const selectedWordRange = roomStore?.getSelectedWordRange(otherPlayer);
+    if (selectedWordRange && selectedWordRange.length > 0) {
+      socket.to(roomId)
       .emit('words-selected', words.map(sWord => { 
           const { word, ...restWord } = sWord; 
           return restWord;
         })
       );
+    }
   }); 
 
   socket.on('send-attempt', (words:Array<Word>) => {
     const playersInRoom = Array.from(gameRoomNamespace.adapter.rooms.get(roomId) || []);
-    const otherPlayer = playersInRoom.find(id => id != socket.id) || '';
+    const otherPlayer = playersInRoom.find(id => id !== socket.id) || '';
     const selectedWords = roomStore?.getSelectedWords(otherPlayer);
     if (selectedWords && selectedWords?.length > 0) {
       const attempts = words.map((word):AttemptCount => {
