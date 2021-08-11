@@ -2,7 +2,7 @@ import { createServer } from "http";
 import express, { Express, Request, Response } from "express";
 import socket from "./socket";
 import { Socket } from "socket.io";
-import { AttemptResponse, Word, JoinToRoomResponse, AttemptCount, CustomSocket } from "./types";
+import { AttemptResponse, Word, JoinToRoomResponse, AttemptCount, CustomSocket, RoomConfig } from "./types";
 import attemptChecker from "./utils/attemptChecker";
 import { InMemoryStore, RoomStore } from "./store/roomStore";
 import pointsCounter from "./utils/pointsCounter";
@@ -60,7 +60,7 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
   }
 
   const usersInRoom = Array.from(gameRoomNamespace.adapter.rooms.get(roomId) || []);
-  console.log(`Current Users in room => `, usersInRoom);
+  console.log(`Current Users in room => ${playerID}`, socket.id);
 
   socket.on('create-room', (room:string) => {
     socket.join(room);
@@ -68,6 +68,7 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
     roomStore = serverStore.createRoomStore(room);
     roomStore.savePlayer(playerID);
     console.log(`Room with Id=${room} was created`);
+    gameRoomNamespace.to(socket.id).emit('created-room', room);
   });
 
   socket.on('join-to-room', (room:string) => {
@@ -86,6 +87,11 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
     } else {
       console.log(`Failed to  join user with Id=${playerID} to the room with Id=${room}. Room not found.`);
     }
+  });
+
+  socket.on('room-config', (config: RoomConfig) => {
+    console.log('Room config stablished => ', config);
+    socket.to(roomId).emit('room-config', config);
   });
 
   socket.on('word-range-selected', (words:Array<Word>) => {
@@ -145,6 +151,7 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
       console.log('Self => ', playerID);
       console.log('Other player => ', otherPlayer);
       console.log('Roomstore => ', roomStore);
+      console.log('PlayerData => ', roomStore?.getPlayerData(playerID));
       gameRoomNamespace.to(roomId).emit('attempt-checked', attemptResult); 
     }
   });

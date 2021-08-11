@@ -58,7 +58,9 @@ export class RoomStore {
   }
 
   public getAttempt(playerId:string, wordId:string):AttemptCount|null {
-    return this.data[playerId].attempts.find(attempt => attempt.wordId === wordId) || null;
+    return this.data[playerId].attempts
+      .filter(attempt => attempt.wordId === wordId)
+      .sort((a,b) => b.count-a.count)[0];
   }
 
   public saveSelectedWordRange(playerId:string, wordRange:Array<Word>):void {

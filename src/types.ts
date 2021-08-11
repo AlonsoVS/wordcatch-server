@@ -36,6 +36,12 @@ export type Definition = {
   synonyms: Array<any>
 }
 
+export type RoomConfig = {
+  selectLimit:number
+  maxAttempts:number
+  playerNumber:number
+}
+
 export type Word = {
   definitions:Array<Definition>
 	id: string
