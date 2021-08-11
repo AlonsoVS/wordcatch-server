@@ -65,6 +65,10 @@ export class RoomStore {
       .sort((a,b) => b.count-a.count)[0];
   }
 
+  public getPlayerAttempts(playerId:string) {
+    return this.data[playerId].attempts;
+  }
+
   public saveSelectedWordRange(playerId:string, wordRange:Array<Word>):void {
     this.data[playerId].selectedWordRange = wordRange;
   }

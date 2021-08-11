@@ -7,7 +7,8 @@ export type AttemptCount = {
   wordId:string
 }
 
-export type AttemptResponse = { 
+export type AttemptResponse = {
+  allAttempts:Array<AttemptCount>
   attemptPoints:number
   points:{ 
     [player:string]:number 

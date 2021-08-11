@@ -134,6 +134,7 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
           }
       }); 
       const checkResult = attemptChecker(words, selectedWords, attempts);
+      roomStore?.saveAttempt(playerID, checkResult);
       const { attemptPoints, pointsPerWord } = pointsCounter(checkResult, roomStore?.getMaxAttemptsToGuess() || 3);
       const playerPoints = roomStore?.updatePlayerPoints(
           playerID, 
@@ -141,13 +142,13 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
       );
       const attemptResult:AttemptResponse = {  
         attemptPoints,
+        allAttempts: roomStore?.getPlayerAttempts(playerID) || [],
         points: { 
           [otherPlayer]: roomStore?.getPlayerPoints(otherPlayer) || 0, 
           [playerID]: playerPoints || 0
         },
         pointsPerWord
       };
-      roomStore?.saveAttempt(playerID, checkResult);
       console.log('Self => ', playerID);
       console.log('Other player => ', otherPlayer);
       console.log('Roomstore => ', roomStore);
