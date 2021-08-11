@@ -53,8 +53,10 @@ export class RoomStore {
     return Object.keys(this.data);
   }
 
-  public saveAttempt(playerId:string, attempt:AttemptCount[]):void {
-    this.data[playerId].attempts = this.data[playerId].attempts.concat(attempt);
+  public saveAttempt(playerId:string, attempts:AttemptCount[]):void {
+    this.data[playerId].attempts = this.data[playerId].attempts.filter(prevAttempt => 
+      !attempts.find(currentAttempt => currentAttempt.wordId === prevAttempt.wordId))
+      .concat(attempts);
   }
 
   public getAttempt(playerId:string, wordId:string):AttemptCount|null {
