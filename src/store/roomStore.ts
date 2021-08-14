@@ -113,4 +113,8 @@ export class InMemoryStore {
   public getRoomStore(roomId:string):RoomStore {
     return this.store[roomId];
   }
+
+  public getAllRooms():Array<string>  {
+    return Object.keys(this.store);
+  }
 }

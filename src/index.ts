@@ -47,6 +47,8 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
       roomStore = tempRoomStore;
       socket.join(room);
       console.log(`Player with ID=${playerID} reconnected to room with ID=${room}`);
+      const usersInRoom = roomStore?.getPlayers();
+      console.log(`Current Users in room => ${playerID}`, usersInRoom);
       gameRoomNamespace.to(room).emit('user-reconnect', { 
         user: playerID, 
         usersInRoom: roomStore.getPlayers()
@@ -59,9 +61,6 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
     gameRoomNamespace.to(playerAddress).emit('connected', playerID);
   }
 
-  const usersInRoom = Array.from(gameRoomNamespace.adapter.rooms.get(roomId) || []);
-  console.log(`Current Users in room => ${playerID}`, socket.id);
-
   socket.on('create-room', (room:string) => {
     socket.join(room);
     roomId = room;
@@ -69,6 +68,11 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
     roomStore.savePlayer(playerID);
     console.log(`Room with Id=${room} was created`);
     gameRoomNamespace.to(socket.id).emit('created-room', room);
+  });
+
+  socket.on('get-rooms', () => {
+    const rooms = serverStore.getAllRooms();
+    gameRoomNamespace.to(socket.id).emit('get-rooms', rooms);
   });
 
   socket.on('join-to-room', (room:string) => {
@@ -79,6 +83,7 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
       roomId = room;
       roomStore.savePlayer(playerID);
       const joinResponse:JoinToRoomResponse = { 
+        roomId:room,
         user: playerID, 
         usersInRoom: roomStore.getPlayers() 
       };
@@ -90,14 +95,11 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
   });
 
   socket.on('room-config', (config: RoomConfig) => {
-    console.log('Room config stablished => ', config);
     socket.to(roomId).emit('room-config', config);
   });
 
   socket.on('word-range-selected', (words:Array<Word>) => {
     roomStore?.saveSelectedWordRange(playerID, words);
-    console.log('Self => ', playerID);
-    console.log('Roomstore => ', roomStore);
     socket.to(roomId).emit('word-range-selected', words);
   });
 
@@ -107,6 +109,10 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
     const selectedWordRange = roomStore?.getSelectedWordRange(otherPlayer);
     if (selectedWordRange && selectedWordRange.length > 0) {
       roomStore?.saveSelectedWords(playerID, words);
+      roomStore?.saveAttempt(
+        otherPlayer, 
+        words.map(word => ({ wordId: word.id, successful: false, count: 0 } as AttemptCount))
+      );
       socket.to(roomId)
       .emit('words-selected', words.map(sWord => { 
           const { word, ...restWord } = sWord; 
@@ -114,9 +120,6 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
         })
       );
     }
-    console.log('Self => ', playerID);
-    console.log('Other player => ', otherPlayer);
-    console.log('Roomstore => ', roomStore);
   }); 
 
   socket.on('send-attempt', (words:Array<Word>) => {
@@ -149,10 +152,6 @@ gameRoomNamespace.on('connection', (socket:Socket) => {
         },
         pointsPerWord
       };
-      console.log('Self => ', playerID);
-      console.log('Other player => ', otherPlayer);
-      console.log('Roomstore => ', roomStore);
-      console.log('PlayerData => ', roomStore?.getPlayerData(playerID));
       gameRoomNamespace.to(roomId).emit('attempt-checked', attemptResult); 
     }
   });

@@ -22,6 +22,7 @@ export interface CustomSocket extends Socket {
 }
 
 export type JoinToRoomResponse = { 
+  roomId:string
   user:string, 
   usersInRoom:Array<string>
 }
